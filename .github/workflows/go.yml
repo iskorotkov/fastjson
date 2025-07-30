@@ -1,0 +1,105 @@
+name: go
+
+concurrency:
+  group: go
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+
+      matrix:
+        go:
+          - version: "1.24"
+            experiment: ""
+          - version: "1.25.0-rc.2"
+            experiment: "jsonv2"
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    name: ${{ matrix.go.version }} / ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      CGO_ENABLED: 0
+      GOEXPERIMENT: ${{ matrix.go.experiment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go.version }}
+          check-latest: true
+
+      - run: go mod download
+
+      - run: go build ./...
+
+      - run: go test ./...
+
+      - run: go test -bench=. ./...
+
+      - run: go test -bench="Tokenizer" ./...
+        working-directory: benchmarks
+
+      - run: go test -bench=. -skip="Tokenizer" -count=10 ./... | tee benchmarks.txt
+        working-directory: benchmarks
+
+      - run: go install golang.org/x/perf/cmd/benchstat@latest
+        working-directory: benchmarks
+
+      - name: Vs. naive version
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/iskorotkov/fastjson/naive)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. encoding/json
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/encoding/json)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. encoding/json/v2 (Go 1.25+)
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/encoding/json/v2)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. jsoniter
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/json-iterator/go)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. jsoniter (fastest)
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/json-iterator/go/fastest)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. goccy
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/goccy/go-json)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. easyjson
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/mailru/easyjson)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. protobuf
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/protobuf/proto)" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. avro
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:(Unmarshal/iskorotkov/fastjson OR Unmarshal/hamba/avro/v2)" benchmarks.txt
+        working-directory: benchmarks
