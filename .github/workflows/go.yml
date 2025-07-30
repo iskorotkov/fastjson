@@ -1,0 +1,117 @@
+name: go
+
+concurrency:
+  group: go
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+
+      matrix:
+        go:
+          - "1.24"
+          - "1.25.0-rc.3"
+
+        os:
+          - ubuntu-latest
+          # - ubuntu-24.04-arm
+          # - macos-latest
+          # - windows-latest
+
+        include:
+          - go: 1.25.0-rc.3
+            goexperiment: jsonv2
+
+    name: ${{ matrix.go }} / ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      CGO_ENABLED: 0
+      GOEXPERIMENT: ${{ matrix.goexperiment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: true
+
+      - run: go mod download
+
+      - run: go build ./...
+
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          install-mode: goinstall
+          cache-invalidation-interval: 30
+
+      - run: go test ./...
+
+      - run: go test -bench=. ./...
+
+      - run: go test -bench="Tokenizer" ./...
+        working-directory: benchmarks
+
+      - run: go test -bench=. -skip="Tokenizer" -count=10 ./... | tee benchmarks.txt
+        working-directory: benchmarks
+
+      - run: go install golang.org/x/perf/cmd/benchstat@latest
+        working-directory: benchmarks
+
+      - name: Vs. naive version
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. encoding/json
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|encoding\\/json$/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. encoding/json/v2 (Go 1.25+)
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|encoding\\/json\\/v2/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. jsoniter
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|json-iterator\\/go$/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. jsoniter (fastest)
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|json-iterator\\/go\\/fastest/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. goccy
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|goccy\\/go-json/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. easyjson
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|mailru\\/easyjson/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. protobuf
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|protobuf\\/proto/" benchmarks.txt
+        working-directory: benchmarks
+
+      - name: Vs. avro
+        run: |
+          benchstat -table= -col=.fullname -row=.name -filter=".fullname:/iskorotkov\\/fastjson$|hamba\\/avro/" benchmarks.txt
+        working-directory: benchmarks
