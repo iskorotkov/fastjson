@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package benchmarks;
+
+option go_package = "github.com/iskorotkov/fastjson/benchmarks/protobuf";
+
+message UserManagementResponse {
+  string api_version = 1;
+  string timestamp = 2;
+  string request_id = 3;
+  string environment = 4;
+  string region = 5;
+  Pagination pagination = 6;
+  Metadata metadata = 7;
+  repeated User users = 8;
+  SystemMetrics system_metrics = 9;
+  SecuritySummary security_summary = 10;
+}
+
+message Pagination {
+  int32 page = 1;
+  int32 per_page = 2;
+  int32 total_pages = 3;
+  int32 total_count = 4;
+  bool has_next = 5;
+  bool has_previous = 6;
+}
+
+message Metadata {
+  int32 execution_time_ms = 1;
+  bool cache_hit = 2;
+  int32 database_queries = 3;
+  double memory_usage_mb = 4;
+  double cpu_usage_percent = 5;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string display_name = 6;
+  string avatar_url = 7;
+  string status = 8;
+  bool email_verified = 9;
+  bool phone_verified = 10;
+  bool two_factor_enabled = 11;
+  string created_at = 12;
+  string updated_at = 13;
+  string last_login = 14;
+  int32 login_count = 15;
+  Profile profile = 16;
+  Permissions permissions = 17;
+  Activity activity = 18;
+  Preferences preferences = 19;
+}
+
+message Profile {
+  string bio = 1;
+  string location = 2;
+  string timezone = 3;
+  string language = 4;
+  string date_format = 5;
+  string time_format = 6;
+  string company = 7;
+  string department = 8;
+  string title = 9;
+  string manager_id = 10;
+  string hire_date = 11;
+  string salary_band = 12;
+  string employment_type = 13;
+}
+
+message Permissions {
+  repeated string roles = 1;
+  repeated string groups = 2;
+  AccessLevels access_levels = 3;
+  FeatureFlags feature_flags = 4;
+}
+
+message AccessLevels {
+  repeated string repositories = 1;
+  repeated string environments = 2;
+  bool sensitive_data = 3;
+  bool admin_panel = 4;
+  bool billing = 5;
+}
+
+message FeatureFlags {
+  bool new_dashboard = 1;
+  bool experimental_ai = 2;
+  bool beta_mobile_app = 3;
+  bool advanced_analytics = 4;
+}
+
+message Activity {
+  ActivityStats last_30_days = 1;
+  repeated RecentAction recent_actions = 2;
+}
+
+message ActivityStats {
+  int32 logins = 1;
+  int32 commits = 2;
+  int32 pull_requests = 3;
+  int32 code_reviews = 4;
+  int32 deployments = 5;
+  int32 support_tickets = 6;
+}
+
+message RecentAction {
+  string action = 1;
+  string resource = 2;
+  string timestamp = 3;
+  string ip_address = 4;
+}
+
+message Preferences {
+  NotificationSettings notifications = 1;
+  UISettings ui = 2;
+}
+
+message NotificationSettings {
+  EmailNotifications email = 1;
+  SlackNotifications slack = 2;
+  MobileNotifications mobile = 3;
+}
+
+message EmailNotifications {
+  bool system_updates = 1;
+  bool security_alerts = 2;
+  bool team_mentions = 3;
+  bool deployment_status = 4;
+  bool weekly_summary = 5;
+}
+
+message SlackNotifications {
+  bool direct_messages = 1;
+  bool team_channels = 2;
+  bool urgent_alerts = 3;
+}
+
+message MobileNotifications {
+  bool push_enabled = 1;
+  QuietHours quiet_hours = 2;
+}
+
+message QuietHours {
+  bool enabled = 1;
+  string start = 2;
+  string end = 3;
+}
+
+message UISettings {
+  string theme = 1;
+  bool sidebar_collapsed = 2;
+  bool compact_mode = 3;
+  bool animations_enabled = 4;
+}
+
+message SystemMetrics {
+  int32 active_users_last_24h = 1;
+  int32 total_logins_today = 2;
+  int32 failed_login_attempts = 3;
+  int32 password_resets_requested = 4;
+  int32 new_user_registrations = 5;
+  int32 average_session_duration_minutes = 6;
+  map<string, double> feature_adoption_rates = 7;
+}
+
+message SecuritySummary {
+  int32 suspicious_activities = 1;
+  repeated string blocked_ips = 2;
+  repeated SecurityAlert security_alerts = 3;
+  ComplianceStatus compliance_status = 4;
+}
+
+message SecurityAlert {
+  string id = 1;
+  string type = 2;
+  string user_id = 3;
+  string timestamp = 4;
+  string severity = 5;
+  bool resolved = 6;
+}
+
+message ComplianceStatus {
+  bool gdpr_compliant = 1;
+  bool sox_compliant = 2;
+  string last_audit = 3;
+  string next_audit = 4;
+}

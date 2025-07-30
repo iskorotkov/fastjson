@@ -1,0 +1,9 @@
+.vs/
+.vscode/
+.idea/
+.zed/
+
+vendor/
+target/
+
+benchmarks.txt
